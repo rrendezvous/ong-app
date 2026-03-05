@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     // GET /api/users
     public function index()
     {
-        return response()->json(User::all());
+        return response()->json(
+            User::select('id', 'name', 'email', 'created_at')->paginate(15)
+        );
     }
 
     // POST /api/users
@@ -20,20 +21,25 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
         ]);
 
-        $data['password'] = Hash::make($data['password']);
-
         $user = User::create($data);
+        $user->assignRole('user');
 
-        return response()->json($user, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'User created successfully.',
+            'data' => $user,
+        ], 201);
     }
 
     // GET /api/users/{id}
     public function show($id)
     {
-        return response()->json(User::findOrFail($id));
+        return response()->json(
+            User::select('id', 'name', 'email', 'created_at')->findOrFail($id)
+        );
     }
 
     // PUT /api/users/{id}
@@ -44,12 +50,8 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|required|string|min:6',
+            'password' => 'sometimes|required|string|min:8',
         ]);
-
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
 
         $user->update($data);
 

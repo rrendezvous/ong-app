@@ -19,9 +19,8 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
-            $data['password'] = Hash::make($data['password']);
-
             $user = User::create($data);
+            $user->assignRole('user');
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
